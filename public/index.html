@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Centrifuge Chat Example</title>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="row">
+        <div class="col-md-6 offset-md-3">
+          <div class="card">
+            <div class="card-header">Centrifuge Chat</div>
+            <div class="card-body" id="chatBox"></div>
+            <div class="card-footer">
+              <input
+                type="text"
+                id="input"
+                class="form-control"
+                placeholder="Type your message..."
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/centrifuge@^5/dist/centrifuge.js"></script>
+    <script>
+      function drawText(text) {
+        const div = document.createElement("div");
+        div.innerHTML = text + "<br>";
+        document.getElementById("chatBox").appendChild(div);
+      }
+
+      const centrifuge = new Centrifuge(
+        "ws://localhost:8000/connection/websocket"
+      );
+
+      centrifuge.on("connected", function (ctx) {
+        console.log("Connected over " + ctx.transport);
+      });
+
+      const ChatRoom = centrifuge.newSubscription("chat-room-001");
+      ChatRoom.on("publication", function (ctx) {
+        drawText(JSON.stringify(ctx.data));
+      });
+
+      ChatRoom.subscribe();
+
+      const input = document.getElementById("input");
+      input.addEventListener("keyup", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const message = this.value.trim();
+          if (message === "") {
+            return;
+          }
+          ChatRoom.publish(message);
+          this.value = "";
+        }
+      });
+
+      centrifuge.connect();
+    </script>
+  </body>
+</html>
